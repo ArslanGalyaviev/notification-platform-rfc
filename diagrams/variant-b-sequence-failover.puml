@@ -1,0 +1,20 @@
+@startuml
+title Вариант 2 - Failover (push упал -> SMS)
+
+participant "Temporal" as Temporal
+participant "Воркер" as Worker
+participant "Push Адаптер" as PushAdapter
+participant "SMS Адаптер" as SmsAdapter
+
+Temporal -> Worker: Задача (шаг push)
+Worker -> PushAdapter: send_push()
+PushAdapter --> Worker: Ошибка
+Worker -> Temporal: Шаг упал
+
+note right of Temporal: Temporal сам делает retry.\nЕсли не вышло - переходим на SMS.
+
+Temporal -> Worker: Задача (шаг sms)
+Worker -> SmsAdapter: send_sms()
+SmsAdapter --> Worker: Успех
+Worker -> Temporal: Шаг завершен
+@enduml

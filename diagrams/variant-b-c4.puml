@@ -1,0 +1,40 @@
+@startuml
+left to right direction
+title Вариант 2 - Общая схема (C4)
+
+actor "Сервис банка" as Bank
+actor "Пользователь" as User
+
+rectangle "Notification Platform" {
+  component "Notification API" as API
+  database "PostgreSQL\n(Витрина для поддержки)" as DB
+  database "Temporal DB\n(История воркфлоу)" as TDB
+  component "Temporal Cluster" as Temporal
+  component "Воркеры (Workers)\n(Логика отправки)" as Worker
+  component "Адаптеры\n(Push / SMS / Email)" as Adapters
+}
+
+cloud "Push Провайдер" as Push
+cloud "SMS Провайдер" as Sms
+cloud "Email Провайдер" as Email
+
+Bank --> API : POST /notify
+API --> Temporal : Запустить воркфлоу
+API --> DB : Сохранить статус (для поиска)
+Temporal --> TDB : Сохранить состояние
+
+Worker <--> Temporal : Получить задачу / обновить
+Worker --> Adapters : Отправить
+
+Adapters --> Push : Push
+Adapters --> Sms : SMS
+Adapters --> Email : Email
+
+Push --> API : Колбэк
+Sms --> API : Колбэк
+Email --> API : Колбэк
+
+Push --> User
+Sms --> User
+Email --> User
+@enduml

@@ -1,0 +1,27 @@
+@startuml
+title Вариант 1 - Обычная отправка (успех)
+
+actor "Сервис банка" as Bank
+participant "API" as API
+participant "Redis" as Redis
+participant "Kafka" as Kafka
+participant "Оркестратор" as Orch
+participant "Push Адаптер" as Adapter
+
+Bank -> API: POST /notify (idempKey)
+API -> Redis: Проверить ключ
+alt Ключ уже есть
+  Redis --> API: Дубль
+  API --> Bank: 200 OK (уже отправляли)
+else Ключ новый
+  API -> Kafka: Положить в critical
+  API --> Bank: 202 Accepted (взяли в работу)
+  
+  Kafka -> Orch: Новое уведомление
+  Orch -> Orch: Выбрать канал (push)
+  Orch -> Adapter: send_push()
+  Adapter -> Adapter: Отправка провайдеру
+  Adapter --> Orch: Успех
+  Orch -> Orch: Сохранить статус "отправлено"
+end
+@enduml

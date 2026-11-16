@@ -1,0 +1,17 @@
+@startuml
+title Вариант 1 - Failover (push упал -> SMS)
+
+participant "Оркестратор" as Orch
+participant "Push Адаптер" as PushAdapter
+participant "SMS Адаптер" as SmsAdapter
+
+Orch -> PushAdapter: send_push()
+PushAdapter --> Orch: Ошибка (timeout)
+
+note right of Orch: Пуш не прошел.\nПробуем SMS.
+
+Orch -> Orch: Взять лок в Redis (чтобы не было дублей)
+Orch -> SmsAdapter: send_sms()
+SmsAdapter --> Orch: Успех
+Orch -> Orch: Сохранить статус "отправлено через SMS"
+@enduml

@@ -1,0 +1,18 @@
+@startuml
+title Вариант 2 - Обычная отправка (успех)
+
+actor "Сервис банка" as Bank
+participant "API" as API
+participant "Temporal" as Temporal
+participant "Воркер" as Worker
+participant "Push Адаптер" as Adapter
+
+Bank -> API: POST /notify (idempKey)
+API -> Temporal: StartWorkflow(idempKey)
+API --> Bank: 202 Accepted
+
+Temporal -> Worker: Взять задачу
+Worker -> Adapter: send_push()
+Adapter --> Worker: Успех
+Worker -> Temporal: Шаг завершен (ждем колбэк)
+@enduml

@@ -1,0 +1,42 @@
+@startuml
+left to right direction
+title Вариант 1 - Общая схема (C4)
+
+actor "Сервис банка" as Bank
+actor "Пользователь" as User
+
+rectangle "Notification Platform" {
+  component "Notification API" as API
+  database "PostgreSQL\n(Статусы)" as DB
+  database "Redis\n(Локи, кэш)" as Redis
+  queue "Kafka" as Kafka
+  component "Delivery Orchestrator\n(Сервис-мозг)" as Orch
+  component "Адаптеры\n(Push / SMS / Email)" as Adapters
+}
+
+cloud "Push Провайдер" as Push
+cloud "SMS Провайдер" as Sms
+cloud "Email Провайдер" as Email
+
+Bank --> API : POST /notify
+API --> Redis : Проверка дублей
+API --> DB : Сохранить статус
+API --> Kafka : Отправить в очередь
+
+Kafka --> Orch : Читать очередь
+Orch --> Redis : Настройки юзера
+Orch --> DB : Обновить статус
+Orch --> Adapters : Отправить
+
+Adapters --> Push : Отправить push
+Adapters --> Sms : Отправить SMS
+Adapters --> Email : Отправить email
+
+Push --> API : Колбэк (доставлено)
+Sms --> API : Колбэк (доставлено)
+Email --> API : Колбэк (доставлено)
+
+Push --> User : Пуш
+Sms --> User : СМС
+Email --> User : Письмо
+@enduml
